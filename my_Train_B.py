@@ -113,7 +113,7 @@ train_output_dir = create_dir(osp.join(output_dir, experiment_name))
 vae, encoder, decoder = build_and_compile_annealing_vae(optimizer=keras.optimizers.Adam(lr=0.001,clipnorm=0.1),
                                     encoder_conv_layers = [1024,1024,1028,1024],
                                     dense_size = [1028,1028,1028,512],
-                                    decoder = [2048,2048,1028,512,512],
+                                    decoder_sizes = [2048,2048,1028,512,512], # bug fix jul.07
                                     numItermaxinner = 40,   # EMD approximation params
                                     numIter=10,
                                     reg_init = 1.,
