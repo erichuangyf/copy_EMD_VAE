@@ -201,66 +201,31 @@ output_dir = '/global/home/users/yifengh3/B_result/'
 
 experiment_name = 'B_train_decoder_fixed'
 train_output_dir = create_dir(osp.join(output_dir, experiment_name))
-vae, encoder, decoder = build_and_compile_annealing_vae(optimizer=keras.optimizers.Adam(lr=0.001,clipnorm=0.1),
-                                    encoder_conv_layers = [2048,2048,1028,1024],
-                                    dense_size = [1028,1028,1028,512],
-                                    decoder_sizes = [4096,2048,1028,512,512],
-                                    numItermaxinner = 40,   # EMD approximation params
-                                    numIter=10,
-                                    reg_init = 1.,
-                                    reg_final = 0.01,
-                                    stopThr=1e-3,
-                                    num_inputs=4,           # Size of x (e.g. pT, eta, sin, cos, log E)
-                                    num_particles_in=50)    # Num particles per event.
+
+batch_size=150
+save_period=50
+
+import json
+vae_args_file = osp.join(train_output_dir,"./vae_args.dat")
+with open(vae_args_file,'r') as f:
+  vae_arg_dict = json.loads(f.read())
+
+print("\n\n vae_arg_dict:", vae_arg_dict)
+
+vae, encoder, decoder = build_and_compile_annealing_vae(**vae_arg_dict)
 
 batch_size=150
 save_period=2
 
-reduceLR = keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.1, patience=2, verbose=1, mode='auto', min_delta=1e-4, cooldown=0, min_lr=0)
-modelcheckpoint = keras.callbacks.ModelCheckpoint(train_output_dir + '/model_weights_{epoch:02d}.hdf5', save_freq = save_period*5000, save_weights_only=True)
-reset_metrics_inst = reset_metrics()
+vae.beta.assign(0.001)
 
-callbacks=[tf.keras.callbacks.CSVLogger(train_output_dir + '/log.csv', separator=",", append=True),
-            reduceLR,
-            modelcheckpoint,
-            reset_metrics_inst]
-
-
-# Need to train on at least one example before model params can be loaded for annoying reasons.
-
-# history = vae.fit(x=train_x[:10], y=train_y[:10], batch_size=batch_size,
-#                 epochs=1,verbose=1,#initial_epoch=int(vae.optimizer.iterations/numbatches),
-#                 validation_data = (valid_x[:10],valid_y[:10]),
-#                 callbacks = callbacks
-#               )
+K.set_value(vae.optimizer.lr,1e-4)
 
 
 # In[7]:
 
 
 decoder.summary()
-
-
-# In[8]:
-
-
-import json
-import keras
-# generate the model arg file
-vae_args_file = os.path.join(train_output_dir,"vae_args.dat")
-vae_arg_dict = {"encoder_conv_layers" : [2048,2048,1028,1024],
-                "dense_size" :[1028,1028,1028,512],
-                "decoder_sizes" : [4096,2048,1028,512,512],
-                "numItermaxinner" : 40,   # EMD approximation params
-                "numIter":10,
-                "reg_init" : 1.,
-                "reg_final" : 0.01,
-                "stopThr":1e-3,
-                "num_inputs":4,           # Size of x (e.g. pT, eta, sin, cos, log E)
-                "num_particles_in":50}
-
-with open(vae_args_file,'w') as file:
-  file.write(json.dumps(vae_arg_dict))
 
 
 # In[9]:
@@ -276,9 +241,15 @@ earlystop = tf.keras.callbacks.EarlyStopping(
     baseline=None, restore_best_weights=False
 )
 
-for beta in np.concatenate((np.logspace(-4,np.log10(7),20),
-               np.logspace(np.log10(7),-5,20)[1:],
-                np.logspace(-5,np.log10(7),20)[1:])):
+betas = np.concatenate((
+np.logspace(np.log10(7),np.log10(1e-2),20),
+np.logspace(np.log10(1e-2),np.log10(0.3),20),
+np.logspace(np.log10(0.15),np.log10(0.5e-3),20),
+np.logspace(np.log10(0.5e-3),np.log10(0.1),20),
+np.logspace(np.log10(0.1),np.log10(0.25e-3),20),
+))
+
+for beta in betas:
     modelcheckpoint = keras.callbacks.ModelCheckpoint(train_output_dir + '/model_weights_{epoch:02d}.hdf5', save_freq = save_period*steps_per_epoch, save_weights_only=True)
     callbacks=[tf.keras.callbacks.CSVLogger(train_output_dir + '/log.csv', separator=",", append=True),
             reduceLR,earlystop,

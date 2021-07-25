@@ -228,24 +228,24 @@ callbacks=[tf.keras.callbacks.CSVLogger(train_output_dir + '/log.csv', separator
 # In[9]:
 
 
-init_epoch = 1867
+init_epoch = 4108
 steps_per_epoch = 1000
-save_period = 40
+save_period = 50
 
-load_file_name = "model_weights_end_1867_7.0e+00.hdf5"
+load_file_name = "model_weights_end_4108_2.5e-04.hdf5"
 
 vae.load_weights(os.path.join(train_output_dir,load_file_name))
 
 betas = np.concatenate((
-np.logspace(np.log10(7),np.log10(1e-2),20),
-np.logspace(np.log10(1e-2),np.log10(0.3),20),
-np.logspace(np.log10(0.15),np.log10(0.5e-3),20),
-np.logspace(np.log10(0.5e-3),np.log10(0.1),20),
-np.logspace(np.log10(0.1),np.log10(0.25e-3),20),
+np.logspace(np.log10(0.25e-3),np.log10(0.05),20),
+np.logspace(np.log10(0.05),np.log10(0.1e-3),20),
+np.logspace(np.log10(0.1e-3),np.log10(0.02),20),
+np.logspace(np.log10(0.02),np.log10(0.8e-4),20),
+np.logspace(np.log10(0.8e-4),np.log10(0.01),20)
 ))
 
 
-reduceLR = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=np.sqrt(0.1), patience=5, verbose=1, mode='auto', min_delta=1e-4, cooldown=0, min_lr=1e-8)
+reduceLR = keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=np.sqrt(0.1), patience=10, verbose=1, mode='auto', min_delta=1e-4, cooldown=0, min_lr=1e-8)
 earlystop = tf.keras.callbacks.EarlyStopping(
     monitor='val_loss', min_delta=0., patience=5, verbose=0, mode='auto',
     baseline=None, restore_best_weights=False

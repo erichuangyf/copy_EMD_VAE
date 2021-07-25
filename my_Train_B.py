@@ -139,29 +139,20 @@ import keras
 # generate the model arg file
 vae_args_file = "vae_args.dat"
 vae_arg_dict = {
-                "encoder_conv_layers" : [1024,1024,1028,1024],
-                "dense_size" :[1028,1028,1028,512],
-                "decoder" : [2048,2048,1028,512,512],
-                "numItermaxinner" : 40,   # EMD approximation params
-                "numIter":10,
-                "reg_init" : 1.,
-                "reg_final" : 0.01,
-                "stopThr":1e-3,
-                "num_inputs":4,           # Size of x (e.g. pT, eta, sin, cos, log E)
-                "num_particles_in":50}
+                "encoder_conv_layers": [2048, 2048, 1028, 1024], 
+                "dense_size": [1028, 1028, 1028, 512], 
+                "decoder_sizes": [4096, 2048, 1028, 512, 512], 
+                "numItermaxinner": 40, 
+                "numIter": 10, 
+                "reg_init": 1.0, 
+                "reg_final": 0.01, 
+                "stopThr": 0.001, 
+                "num_inputs": 4, 
+                "num_particles_in": 50}
 
 
 with open(train_output_dir+vae_args_file,'w') as file:
   file.write(json.dumps(vae_arg_dict))
-
-
-# Need to train on at least one example before model params can be loaded for annoying reasons.
-
-history = vae.fit(x=train_x[:10], y=train_y[:10], batch_size=batch_size,
-                epochs=1,verbose=1,#initial_epoch=int(vae.optimizer.iterations/numbatches),
-                validation_data = (valid_x[:10],valid_y[:10]),
-                callbacks = callbacks
-              )
 
 
 # In[11]:
