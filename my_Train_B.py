@@ -243,7 +243,7 @@ betas = np.append(betas, beta_set)
 init_epoch = 0
 steps_per_epoch = 1000
 batch_size=100
-save_period=40
+save_period=20
 
 # define some directory so the model file will not appears everywhere
 checkpoint_dir = create_dir(osp.join(train_output_dir, "checkpoint"))
