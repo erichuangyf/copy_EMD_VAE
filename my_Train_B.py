@@ -208,10 +208,10 @@ if os.path.isfile(vae_args_file):
           vae_arg_dict = json.loads(f.read())
 else:
     # otherwize use the initial argument dict
-    vae_arg_dict = {"encoder_conv_layers" : [2048,2048,1024,1024],
-                    "dense_size" :[1028,1028,1028,512],
-                    "decoder_sizes" : [4096,2048,1028,512,512],
-                    "numItermaxinner" : 40,   # EMD approximation params
+    vae_arg_dict = {"encoder_conv_layers" : [1024,1024,1024,1024],
+                    "dense_size" :[1024,1024,1024,1024],
+                    "decoder_sizes" : [1024,1024,1024,1024,1024],
+                    "numItermaxinner" : 20,   # EMD approximation params
                     "numIter":10,
                     "reg_init" : 1.,
                     "reg_final" : 0.01,
@@ -243,7 +243,7 @@ betas = np.append(betas, beta_set)
 init_epoch = 0
 steps_per_epoch = 1000
 batch_size=100
-save_period=40
+save_period=20
 
 # define some directory so the model file will not appears everywhere
 checkpoint_dir = create_dir(osp.join(train_output_dir, "checkpoint"))

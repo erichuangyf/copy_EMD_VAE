@@ -4,7 +4,6 @@ import tensorflow.keras as keras
 from tensorflow.keras.layers import Input, Dense, Activation, BatchNormalization
 from tensorflow.keras.layers import Conv1D
 from tensorflow.keras.layers import Flatten, Reshape, Lambda
-from keras.layers import LeakyReLU
 from tensorflow.keras.utils import plot_model
 from tensorflow.keras import Model
 from utils.tf_sinkhorn import ground_distance_tf_nograd, sinkhorn_knopp_tf_scaling_stabilized_class
@@ -151,7 +150,7 @@ def build_and_compile_annealing_vae(encoder_conv_layers = [256,256,256,256],
 
     for layer_size in encoder_conv_layers:
         layer = Conv1D(layer_size,1)(layer)
-        layer = keras.layers.LeakyReLU()(layer)
+        layer = keras.layers.LeakyReLU(alpha=0.1)(layer)
         if dropout > 0:
             layer = keras.layers.Dropout(dropout,noise_shape=(None,1,layer_size))(layer)
     
@@ -160,13 +159,13 @@ def build_and_compile_annealing_vae(encoder_conv_layers = [256,256,256,256],
 
     # Dense layers
     for size in dense_size:
-        layer = Dense(size,activation=LeakyReLU())(layer)
-        layer = keras.layers.LeakyReLU()(layer)
+        layer = Dense(size)(layer)
+        layer = keras.layers.LeakyReLU(alpha=0.1)(layer)
         if dropout > 0:
             layer = keras.layers.Dropout(dropout)(layer)
      
-    z_mean = Dense(latent_dim, name='z_mean',activation=LeakyReLU())(layer)
-    z_log_var = Dense(latent_dim, name='z_log_var',activation = LeakyReLU())(layer)
+    z_mean = Dense(latent_dim, name='z_mean')(layer)
+    z_log_var = Dense(latent_dim, name='z_log_var')(layer)
     
     
     layer = tf.stack([z_mean,z_log_var])
@@ -187,13 +186,13 @@ def build_and_compile_annealing_vae(encoder_conv_layers = [256,256,256,256],
     #layer = latent_inputs
     
     for i, layer_size in enumerate(decoder_sizes):
-        layer = Dense(layer_size,activation = LeakyReLU())(layer)
-        layer = keras.layers.LeakyReLU()(layer)
+        layer = Dense(layer_size)(layer)
+        layer = keras.layers.LeakyReLU(alpha=0.1)(layer)
         if dropout > 0:
             layer = keras.layers.Dropout(dropout)(layer)
 
 
-    layer = Dense(num_particles_out*4,activation = LeakyReLU())(layer)
+    layer = Dense(num_particles_out*4)(layer)
     layer = Reshape((num_particles_out,4))(layer)
     layer_pT = layer[:,:,0:1]
     layer_pT = tf.keras.layers.Softmax(axis=-2)(layer_pT)
