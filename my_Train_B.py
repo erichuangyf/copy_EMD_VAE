@@ -5,6 +5,9 @@
 
 # In[1]:
 
+output_dir = '/global/home/users/yifengh3/VAE/B_results'
+experiment_name = 'method2_beta2'
+
 
 import tensorflow as tf
 
@@ -196,8 +199,6 @@ valid_y = data_y[800000:]
 
 import json
 
-output_dir = '/global/home/users/yifengh3/VAE/B_results'
-experiment_name = 'method2_beta1'
 train_output_dir = create_dir(osp.join(output_dir, experiment_name))
 vae_args_file = osp.join(train_output_dir,"vae_args.dat")
 vae_arg_dict = None
@@ -243,11 +244,12 @@ betas = np.append(betas, beta_set)
 init_epoch = 0
 steps_per_epoch = 1000
 batch_size=100
-save_period=20
+save_period=10
 
 # define some directory so the model file will not appears everywhere
 checkpoint_dir = create_dir(osp.join(train_output_dir, "checkpoint"))
 end_beta_checkpoint = create_dir(osp.join(train_output_dir, "end_beta_checkpoint"))
+print("end_beta checkpoint will now be {}".format(end_beta_checkpoint))
 
 modelcheckpoint = keras.callbacks.ModelCheckpoint(
     checkpoint_dir + '/model_weights_{epoch:02d}.hdf5', save_freq = save_period*5000, save_weights_only=True)
@@ -266,13 +268,18 @@ callbacks=[tf.keras.callbacks.CSVLogger(train_output_dir + '/log.csv', separator
             reset_metrics_inst]
 
 earlystop = tf.keras.callbacks.EarlyStopping(
-    monitor='val_loss', min_delta=0., patience=5, verbose=0, mode='auto',
+    monitor='val_loss', min_delta=0., patience=10, verbose=0, mode='auto',
     baseline=None, restore_best_weights=False
 )
 
 for beta in betas:
     vae.beta.assign(beta)
     K.set_value(vae.optimizer.lr,3e-5)
+    
+    callbacks=[tf.keras.callbacks.CSVLogger(train_output_dir + '/log.csv', separator=",", append=True),
+            reduceLR,earlystop,
+            modelcheckpoint,
+            reset_metrics_inst]
     
     my_history = vae.fit(x=train_x, y=train_y, batch_size=batch_size,
                 epochs=10000,verbose=1,
@@ -284,9 +291,9 @@ for beta in betas:
     
     init_epoch = my_history.epoch[-1]
     
-    vae.save_weights(osp.join(
-        end_beta_checkpoint, 
-        '/model_weights_end_' + str(init_epoch) + '_' + "{:.1e}".format(beta) + '.hdf5'))
+    print("saveing model to {}".format(osp.join(end_beta_checkpoint,'model_weights_end_' + str(init_epoch) + '_' + "{:.1e}".format(beta) + '.hdf5')))
+    
+    vae.save_weights(osp.join(end_beta_checkpoint,'model_weights_end_' + str(init_epoch) + '_' + "{:.1e}".format(beta) + '.hdf5'))
 
 
 # In[ ]:
