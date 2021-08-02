@@ -259,7 +259,7 @@ def plot_KL_logvar(outs_array,xlim=None,ylim=None,showhist=False, numhists=10,hi
 
 
 # path to file
-fn =  '/global/home/users/yifengh3/data/B_background.h5'
+fn =  '/global/home/users/yifengh3/VAE/data/B_background.h5'
 
 df = pandas.read_hdf(fn,stop=1000000)
 print(df.shape)
@@ -300,7 +300,7 @@ valid_x = data_x[800000:]
 valid_y = data_y[800000:]
 
 
-train_output_dir = model_dir #create_dir(osp.join(output_dir, experiment_name))
+train_output_dir = osp.join(model_dir,"end_beta_checkpoint") #create_dir(osp.join(output_dir, experiment_name))
 
 with open(vae_args_file,'r') as f:
   vae_arg_dict = json.loads(f.read())
@@ -342,6 +342,7 @@ files.sort(key=os.path.getmtime)
 epochs = np.array([get_epoch(file) for file in files])
 betas = np.array([get_beta(file) for file in files])
 
+latent_dim =128
 KLs = []
 losses = []
 recons = []
@@ -515,7 +516,7 @@ kl_prefix = create_dir(osp.join(file_prefix,"all_KLs"))
 for i in range(len(split_betas)):
     fig = plt.figure()
     for j in range(latent_dim):
-    plt.plot(split_betas[i],split_KLs_array[i][:,j],color='C0')
+        plt.plot(split_betas[i],split_KLs_array[i][:,j],color='C0')
     plt.semilogx()
     ax = fig.axes[0]
     sec_ax = ax.secondary_xaxis('top',functions=(beta_to_betap,betap_to_beta))
