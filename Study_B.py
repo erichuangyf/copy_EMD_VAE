@@ -318,11 +318,11 @@ K.set_value(vae.optimizer.lr,1e-4)
 epochs = 1
 
 
-history = vae.fit(x=train_x[:10], y=train_y[:10], batch_size=batch_size,
-                epochs=epochs,verbose=1,#initial_epoch=int(vae.optimizer.iterations/numbatches),
-                validation_data = (valid_x[:10],valid_y[:10]),
-                callbacks = None
-              )
+# history = vae.fit(x=train_x[:10], y=train_y[:10], batch_size=batch_size,
+#                 epochs=epochs,verbose=1,#initial_epoch=int(vae.optimizer.iterations/numbatches),
+#                 validation_data = (valid_x[:10],valid_y[:10]),
+#                 callbacks = None
+#               )
 
 print("Preparing to load weights")
 
@@ -348,12 +348,14 @@ losses = []
 recons = []
 KLs_array = np.zeros((len(files), latent_dim))
 
-
+import sys
 start=0
 for i, file in enumerate(files[start:]):
-#     print("Loading", file)
-    if i%10 == 0:
-        print("Loading file", str(i), "of", str(len(files[start:])))
+#     if i%10 == 0:
+#         print("Loading file", str(i), "of", str(len(files[start:])))
+    sys.stdout.write('\r')
+    sys.stdout.write("Loading file {} of {}".format(str(i+1),str(len(files[start:]))))
+    sys.stdout.flush()
     vae.load_weights(file)
     vae.beta.assign(betas[i+start])
     outs_array = [vae.predict(valid_x[:1000]) for j in range(1)]
@@ -520,7 +522,7 @@ for i in range(len(split_betas)):
     plt.semilogx()
     ax = fig.axes[0]
     sec_ax = ax.secondary_xaxis('top',functions=(beta_to_betap,betap_to_beta))
-    plt.title(args.img_title)
+#     plt.title(args.img_title)
     plt.xlabel(r'$\beta$')
     plt.ylabel('KL')
     plt.savefig(kl_prefix +'all_KLs_' + str(i) + '.png')
