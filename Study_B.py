@@ -22,7 +22,6 @@ print("Saving files with prefix", file_prefix)
 
 
 import tensorflow as tf
-tf.config.experimental.set_visible_devices([], 'GPU')
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
   try:
@@ -74,12 +73,12 @@ if __name__ == "__main__":
 if args.utils:
   import importlib
   VAE_model_tools = importlib.import_module(args.utils)
-  build_and_compile_annealing_vae = getattr(VAE_model_tools,'build_and_compile_annealing_vae')
-  betaVAEModel = getattr(VAE_model_tools,'betaVAEModel')
-  reset_metrics = getattr(VAE_model_tools,'reset_metrics')
+  build_and_compile_annealing_vae = getattr(VAE_model_tools_leakyrelu,'build_and_compile_annealing_vae')
+  betaVAEModel = getattr(VAE_model_tools_leakyrelu,'betaVAEModel')
+  reset_metrics = getattr(VAE_model_tools_leakyrelu,'reset_metrics')
 else:
-  import utils.VAE_model_tools
-  from utils.VAE_model_tools import build_and_compile_annealing_vae, betaVAEModel, reset_metrics
+  import utils.VAE_model_tools_leakyrelu
+  from utils.VAE_model_tools_leakyrelu import build_and_compile_annealing_vae, betaVAEModel, reset_metrics
 
 
 def create_dir(dir_path):
@@ -525,6 +524,6 @@ for i in range(len(split_betas)):
 #     plt.title(args.img_title)
     plt.xlabel(r'$\beta$')
     plt.ylabel('KL')
-    plt.savefig(kl_prefix +'all_KLs_' + str(i) + '.png')
+    plt.savefig(osp.join(kl_prefix, 'all_KLs_' + str(i) + '.png'))
     #plt.show()
     plt.close()
