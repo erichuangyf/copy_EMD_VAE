@@ -261,12 +261,6 @@ reduceLR = keras.callbacks.ReduceLROnPlateau(
     patience=5, verbose=1, mode='auto', 
     min_delta=1e-4, cooldown=0, min_lr=1e-8)
 
-
-callbacks=[tf.keras.callbacks.CSVLogger(train_output_dir + '/log.csv', separator=",", append=True),
-            reduceLR,
-            modelcheckpoint,
-            reset_metrics_inst]
-
 earlystop = tf.keras.callbacks.EarlyStopping(
     monitor='val_loss', min_delta=0., patience=10, verbose=0, mode='auto',
     baseline=None, restore_best_weights=False

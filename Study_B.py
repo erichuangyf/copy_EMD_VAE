@@ -490,7 +490,7 @@ for j in range(len(split_betas)):
   fig = plt.figure()
   plt.plot(split_betas[j][:-1],D1,linestyle=style)
   plt.plot(split_betas[j][:-1],D2,linestyle=style)
-  plt.ylim([0,10])
+#   plt.ylim([0,10])
   plt.semilogx()
   ax = fig.axes[0]
   sec_ax = ax.secondary_xaxis('top',functions=(beta_to_betap,betap_to_beta))
@@ -504,7 +504,7 @@ for j in range(len(split_betas)):
     style = '--'
   plt.plot(split_betas[j][:-1],D1s[j],color = colors[int(math.floor(j/2))],linestyle=style)
   plt.plot(split_betas[j][:-1],D2s[j],color = colors[int(math.floor(j/2))],linestyle=style)
-  plt.ylim([0,10])
+#   plt.ylim([0,10])
   plt.semilogx()
 ax = fig.axes[0]
 sec_ax = ax.secondary_xaxis('top',functions=(beta_to_betap,betap_to_beta))
