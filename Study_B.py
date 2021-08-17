@@ -1,5 +1,8 @@
 import argparse
 
+# annealing_folders=[]
+annealing_folders = ["/global/home/users/yifengh3/VAE/B_results/annealing_1"]
+
 parser = argparse.ArgumentParser(description='Plot jets')
 parser.add_argument('model_dir')
 parser.add_argument('--img_prefix')
@@ -336,6 +339,10 @@ def get_beta(file):
 epoch_string=re.compile('_\d*_')
 beta_string=re.compile('\d\.[\w\+-]*')
 files = glob.glob(train_output_dir + '/model_weights_end*.hdf5')
+for anneal_dir in annealing_folders:
+    print("loading annealing folder:{}".format(anneal_dir))
+    anneal_output_dir = osp.join(anneal_dir,"end_beta_checkpoint")
+    files.extend(glob.glob(anneal_output_dir + '/model_weights_end*.hdf5'))
 print("Found files:", files)
 files.sort(key=os.path.getmtime)
 epochs = np.array([get_epoch(file) for file in files])
