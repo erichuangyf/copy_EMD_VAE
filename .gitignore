@@ -1,5 +1,11 @@
-
 deprecated_code/Study/.DS_Store
 deprecated_code/.DS_Store
+.DS_Store/
+*.pyc/
+.idea/
+venv/
+__pycache__/
+*.pyc
+*.pyc
 .DS_Store
 *.pyc
