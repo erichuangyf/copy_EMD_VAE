@@ -42,10 +42,12 @@ import json
 
 class VAE_sampler:
 
-    def __init__(self, data_file_name, model_prefix, train_valid_split=None, beta=0.001, lr=1e-4):
+    def __init__(self, data_file_name, model_prefix, train_valid_split=800000, beta=0.001, lr=1e-4):
         self.x, self.y, self.vae, self.encoder, self.decoder = None, None, None, None, None
         self._process_data(data_file_name, train_valid_split)
         self._load_and_build_model(model_prefix, beta, lr)
+        print("input data shape:{}".format(self.x.shape))
+        print("output data shape:{}".format(self.y.shape))
 
     def run_analysis(self, weight_file, number_of_sampling=1, stop_index=None,
                      out_plot_prefix=None, out_data_prefix=None,out_data_name=None):
@@ -54,10 +56,12 @@ class VAE_sampler:
             original_input, original_output = self.x[:stop_index], self.y[:stop_index]
         else:
             original_input, original_output = self.x, self.y
-        print("vae input size: {}\nvalidation data size: {}\n".format(original_input.shape,original_output.shape))
+        print("vae input size: {}\nvalidation data size: {}".format(original_input.shape,original_output.shape))
+        print("sampling data")
         outjets = self._generate_outjets(weight_file, number_of_sampling, original_input)
         # save the sampled data if requested
         if out_data_prefix:
+            print("saving sampled data")
             self._save_as_hdf5(original_output, outjets, out_data_prefix, out_data_name)
 
         # generate plots
@@ -65,8 +69,10 @@ class VAE_sampler:
             [method for method in dir(VAE_sampler) if method.startswith('_VAE_sampler__plots')]
         plotting_function = [eval("VAE_sampler."+func_name) for func_name in plotting_method_name]
         call_parameters = [original_output, outjets, out_plot_prefix]
-        for func in plotting_function:
+        for count,func in enumerate(plotting_function):
+            print("getting plot {} out of {}".format(count+1,len(plotting_function)))
             func(*call_parameters)
+        return original_input, original_output, outjets
 
     def _load_and_build_model(self, model_prefix, beta=0.001, lr=1e-4):
         vae_args_file = osp.join(model_prefix, "vae_args.dat")
@@ -104,8 +110,7 @@ class VAE_sampler:
         # Event 'labels' y are [pT, eta, phi], which is used to calculate EMD to output which is also pT, eta, phi.
         data_y = data
 
-        if train_valid_split:
-            print(1)
+        if train_valid_split and train_valid_split<data_x.shape[0]:
             self.x = data_x[train_valid_split:]
             self.y = data_y[train_valid_split:]
         else:
@@ -148,7 +153,8 @@ class VAE_sampler:
 
     @staticmethod
     def __plots_constituent_phi(ojs, sjs, save_plot):
-        n, b, _ = plt.hist(ojs[:, :, 2].flatten(), label="Original", alpha=0.5)
+        phi = np.mod(ojs[:, :, 2], 2*np.pi) - np.pi
+        n, b, _ = plt.hist(phi.flatten(), label="Original", alpha=0.5)
         plt.hist(sjs[0][:, :, 2].flatten(), label="Sampled", bins=b, histtype="step", color="black")
         plt.xlabel("Constituent $\phi$")
         plt.legend()
