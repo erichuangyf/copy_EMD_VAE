@@ -142,9 +142,15 @@ class VAE_sampler:
 
     # the plotting function starts here
     @staticmethod
-    def __plots_constituent_eta(ojs, sjs, save_plot):
-        n, b, _ = plt.hist(ojs[:, :, 1].flatten(), label="Original", alpha=0.5)
-        plt.hist(sjs[0][:, :, 1].flatten(), label="Sampled", bins=b, histtype="step", color="black")
+    def plots_constituent_eta(ojs, sjs, save_plot, additional_signal=None, data_name=None):
+        if additional_signal:
+            data = [ojs, sjs]
+            data.extend(additional_signal)
+            for index, payload in enumerate(data):
+                plt.hist(payload[:, :, 1].flatten(), label=data_name[index], alpha=0.5, histtype="step")
+        else:
+            n, b, _ = plt.hist(ojs[:, :, 1].flatten(), label="Original", alpha=0.5)
+            plt.hist(sjs[0][:, :, 1].flatten(), label="Sampled", bins=b, histtype="step", color="black")
         plt.xlabel("Constituent $\eta$")
         plt.legend()
         if save_plot:
@@ -152,10 +158,17 @@ class VAE_sampler:
         plt.show()
 
     @staticmethod
-    def __plots_constituent_phi(ojs, sjs, save_plot):
-        phi = np.mod(ojs[:, :, 2], 2*np.pi) - np.pi
-        n, b, _ = plt.hist(phi.flatten(), label="Original", alpha=0.5)
-        plt.hist(sjs[0][:, :, 2].flatten(), label="Sampled", bins=b, histtype="step", color="black")
+    def __plots_constituent_phi(ojs, sjs, save_plot, additional_signal=None, data_name=None):
+        if additional_signal:
+            data = [ojs, sjs]
+            data.extend(additional_signal)
+            for index, payload in enumerate(data):
+                payload = np.mod(payload[:, :, 2], 2*np.pi) - np.pi
+                plt.hist(payload.flatten(), label=data_name[index], alpha=0.5)
+        else:
+            phi = np.mod(ojs[:, :, 2], 2*np.pi) - np.pi
+            n, b, _ = plt.hist(phi.flatten(), label="Original", alpha=0.5)
+            plt.hist(sjs[0][:, :, 2].flatten(), label="Sampled", bins=b, histtype="step", color="black")
         plt.xlabel("Constituent $\phi$")
         plt.legend()
         if save_plot:
@@ -163,9 +176,15 @@ class VAE_sampler:
         plt.show()
 
     @staticmethod
-    def __plots_constituent_pt(ojs, sjs, save_plot):
-        n, b, _ = plt.hist(ojs[:, :, 0].flatten(), label="Original", alpha=0.5)
-        plt.hist(sjs[0][:, :, 0].flatten(), label="Sampled", bins=b, histtype="step", color="black")
+    def __plots_constituent_pt(ojs, sjs, save_plot, additional_signal=None, data_name=None):
+        if additional_signal:
+            data = [ojs, sjs]
+            data.extend(additional_signal)
+            for index, payload in enumerate(data):
+                plt.hist(payload[:, :, 0].flatten(), label=data_name[index], alpha=0.5, histtype="step")
+        else:
+            n, b, _ = plt.hist(ojs[:, :, 0].flatten(), label="Original", alpha=0.5)
+            plt.hist(sjs[0][:, :, 0].flatten(), label="Sampled", bins=b, histtype="step", color="black")
         plt.xlabel("Constituent $p_T$ fraction")
         plt.yscale("log")
         plt.legend()
@@ -185,11 +204,18 @@ class VAE_sampler:
         return np.array(ms)
 
     @staticmethod
-    def __plots_event_mass(ojs, sjs, save_plot):
-        event_mass_oj = VAE_sampler.event_mass(ojs)
-        event_mass_sj = VAE_sampler.event_mass(sjs[0])
-        n, b, _ = plt.hist(event_mass_oj, label="Original", alpha=0.5)
-        plt.hist(event_mass_sj, label="Sampled", bins=b, histtype="step", color="black")
+    def __plots_event_mass(ojs, sjs, save_plot, additional_signal=None, data_name=None):
+        if additional_signal:
+            data = [ojs, sjs]
+            data.extend(additional_signal)
+            for index, payload in enumerate(data):
+                mass = VAE_sampler.event_mass(payload)
+                plt.hist(mass, label=data_name[index], alpha=0.5, histtype="step")
+        else:
+            event_mass_oj = VAE_sampler.event_mass(ojs)
+            event_mass_sj = VAE_sampler.event_mass(sjs[0])
+            n, b, _ = plt.hist(event_mass_oj, label="Original", alpha=0.5)
+            plt.hist(event_mass_sj, label="Sampled", bins=b, histtype="step", color="black")
         plt.xlabel("Event Mass")
         plt.legend()
         if save_plot:
@@ -206,11 +232,18 @@ class VAE_sampler:
         return np.array(ms)
 
     @staticmethod
-    def __plots_MET(ojs, sjs, save_plot):
-        MET_oj = VAE_sampler.MET(ojs)
-        MET_sj = VAE_sampler.MET(sjs[0])
-        n, b, _ = plt.hist(MET_oj, label="Original", alpha=0.5)
-        plt.hist(MET_sj, label="Sampled", bins=b, histtype="step", color="black")
+    def __plots_MET(ojs, sjs, save_plot, additional_signal=None, data_name=None):
+        if additional_signal:
+            data = [ojs, sjs]
+            data.extend(additional_signal)
+            for index, payload in enumerate(data):
+                MET = VAE_sampler.event_mass(payload)
+                plt.hist(MET, label=data_name[index], alpha=0.5,histtype="step")
+        else:
+            MET_oj = VAE_sampler.MET(ojs)
+            MET_sj = VAE_sampler.MET(sjs[0])
+            n, b, _ = plt.hist(MET_oj, label="Original", alpha=0.5)
+            plt.hist(MET_sj, label="Sampled", bins=b, histtype="step", color="black")
         plt.xlabel("Missing Momentum")
         plt.legend()
         plt.yscale("log")
