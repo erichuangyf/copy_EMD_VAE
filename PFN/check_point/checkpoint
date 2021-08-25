@@ -1,0 +1,2 @@
+model_checkpoint_path: "muti_class_checkpoint"
+all_model_checkpoint_paths: "muti_class_checkpoint"
