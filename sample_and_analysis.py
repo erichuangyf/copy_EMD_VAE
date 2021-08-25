@@ -50,7 +50,7 @@ class VAE_sampler:
         print("output data shape:{}".format(self.y.shape))
 
     def run_analysis(self, weight_file, number_of_sampling=1, stop_index=None,
-                     out_plot_prefix=None, out_data_prefix=None,out_data_name=None):
+                     out_plot_prefix=None, save_sample_only=True, out_data_prefix=None,out_data_name=None):
         # sample the jets using model checkpoint
         if stop_index:
             original_input, original_output = self.x[:stop_index], self.y[:stop_index]
@@ -62,7 +62,10 @@ class VAE_sampler:
         # save the sampled data if requested
         if out_data_prefix:
             print("saving sampled data")
-            self._save_as_hdf5(original_output, outjets, out_data_prefix, out_data_name)
+            if not save_sample_only:
+                self._save_as_hdf5(outjets, out_data_prefix, save_name=out_data_name,original_output=original_output)
+            else:
+                self._save_as_hdf5(outjets, out_data_prefix, save_name=out_data_name,original_output=None)
 
         # generate plots
         plotting_method_name = \
@@ -128,7 +131,7 @@ class VAE_sampler:
         outs_jet = np.stack([self.vae.predict(original_input)[0] for j in range(number_of_sampling)])
         return outs_jet
 
-    def _save_as_hdf5(self, original_output, sampled_jets, file_prefix, savename="jets.h5"):
+    def _save_as_hdf5(self, sampled_jets, file_prefix, original_output=None, savename="jets.h5"):
         """Save data as hdf5 file
             original_jets: original input jets
             sampled_jets: sampled jets from VAE model
@@ -136,13 +139,14 @@ class VAE_sampler:
             savename: output file name
         """
         hfile = h5py.File(osp.join(file_prefix, savename), 'w')
-        hfile.create_dataset('original_jets', data=original_output)
+        if type(original_output) is not None:
+            hfile.create_dataset('original_jets', data=original_output)
         hfile.create_dataset('sampled_jets', data=sampled_jets)
         hfile.close()
 
     # the plotting function starts here
     @staticmethod
-    def plots_constituent_eta(ojs, sjs, save_plot, additional_signal=None, data_name=None):
+    def __plots_constituent_eta(ojs, sjs, save_plot, additional_signal=None, data_name=None):
         if additional_signal:
             data = [ojs, sjs]
             data.extend(additional_signal)
@@ -164,7 +168,7 @@ class VAE_sampler:
             data.extend(additional_signal)
             for index, payload in enumerate(data):
                 payload = np.mod(payload[:, :, 2], 2*np.pi) - np.pi
-                plt.hist(payload.flatten(), label=data_name[index], alpha=0.5)
+                plt.hist(payload.flatten(), label=data_name[index], alpha=0.5,histtype="step")
         else:
             phi = np.mod(ojs[:, :, 2], 2*np.pi) - np.pi
             n, b, _ = plt.hist(phi.flatten(), label="Original", alpha=0.5)
