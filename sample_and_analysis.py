@@ -150,22 +150,25 @@ class VAE_sampler:
         hfile.close()
 
     @staticmethod
-    def get_his(data, data_name, process_func=None):
+    def get_his(data, data_name, process_func=None, bins=None):
         for index, payload in enumerate(data):
             if process_func:
                 payload = process_func(payload)
             if index == 0:
-                n, b, _ = plt.hist(payload, label=data_name[index], alpha=0.5, histtype="step", density=True)
+                n, b, _ = plt.hist(payload, label=data_name[index], alpha=0.5, histtype="step", density=True, bins=bins)
             else:
                 plt.hist(payload, label=data_name[index], bins=b, alpha=0.5, histtype="step", density=True)
 
     # the plotting function starts here
     @staticmethod
     def __plots_constituent_eta(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
+        _bins = None
+        if "bins" in kwargs:
+            _bins = kwargs["bins"]
         if additional_signal:
             data = [ojs, sjs]
             data.extend(additional_signal)
-            VAE_sampler.get_his(data, data_name, lambda x: (x[:, :, 1]).flatten())
+            VAE_sampler.get_his(data, data_name, lambda x: (x[:, :, 1]).flatten(), bins=_bins)
             # for index, payload in enumerate(data):
             #     plt.hist(payload[:, :, 1].flatten(), label=data_name[index], alpha=0.5, histtype="step",density=True)
         else:
@@ -179,10 +182,13 @@ class VAE_sampler:
 
     @staticmethod
     def __plots_constituent_phi(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
+        _bins = None
+        if "bins" in kwargs:
+            _bins = kwargs["bins"]
         if additional_signal:
             data = [ojs, sjs]
             data.extend(additional_signal)
-            VAE_sampler.get_his(data, data_name, lambda x: (np.mod(x[:, :, 2], 2*np.pi) - np.pi).flatten())
+            VAE_sampler.get_his(data, data_name, lambda x: (np.mod(x[:, :, 2], 2*np.pi) - np.pi).flatten(), bins=_bins)
             # for index, payload in enumerate(data):
             #     payload = np.mod(payload[:, :, 2], 2*np.pi) - np.pi
             #     plt.hist(payload.flatten(), label=data_name[index], alpha=0.5,histtype="step",density=True)
@@ -198,10 +204,13 @@ class VAE_sampler:
 
     @staticmethod
     def __plots_constituent_pt(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
+        _bins = None
+        if "bins" in kwargs:
+            _bins = kwargs["bins"]
         if additional_signal:
             data = [ojs, sjs]
             data.extend(additional_signal)
-            VAE_sampler.get_his(data, data_name, lambda x: (x[:, :, 0]).flatten())
+            VAE_sampler.get_his(data, data_name, lambda x: (x[:, :, 0]).flatten(), bins=_bins)
             # for index, payload in enumerate(data):
             #     plt.hist(payload[:, :, 0].flatten(), label=data_name[index], alpha=0.5, histtype="step",density=True)
         else:
@@ -227,10 +236,13 @@ class VAE_sampler:
 
     @staticmethod
     def __plots_event_mass(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
+        _bins = None
+        if "bins" in kwargs:
+            _bins = kwargs["bins"]
         if additional_signal:
             data = [ojs, sjs]
             data.extend(additional_signal)
-            VAE_sampler.get_his(data, data_name, VAE_sampler.event_mass)
+            VAE_sampler.get_his(data, data_name, VAE_sampler.event_mass, bins=_bins)
         else:
             event_mass_oj = VAE_sampler.event_mass(ojs)
             event_mass_sj = VAE_sampler.event_mass(sjs[0])
@@ -253,10 +265,13 @@ class VAE_sampler:
 
     @staticmethod
     def __plots_MET(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
+        _bins = None
+        if "bins" in kwargs:
+            _bins = kwargs["bins"]
         if additional_signal:
             data = [ojs, sjs]
             data.extend(additional_signal)
-            VAE_sampler.get_his(data, data_name, VAE_sampler.MET)
+            VAE_sampler.get_his(data, data_name, VAE_sampler.MET, bins=_bins)
         else:
             MET_oj = VAE_sampler.MET(ojs)
             MET_sj = VAE_sampler.MET(sjs[0])
@@ -293,9 +308,12 @@ class VAE_sampler:
     def __plots_clusterd_jets(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
         plot_label = ["n jets", "pT lead jet", "m lead jet"]
         _ptmin = 0.1
+        _bins = None
         if "ptmin" in kwargs:
             _ptmin = kwargs["ptmin"]
             print("Alert: using customized argument: ptmin = {}".format(_ptmin))
+        if "bins" in kwargs:
+            _bins = kwargs["bins"]
 
         if additional_signal:
             data = [ojs, sjs]
@@ -305,7 +323,7 @@ class VAE_sampler:
                 clustering_info.append(VAE_sampler.jet_clustering(d,_ptmin))
             for i in range(3):
                 itemized_info = [clustering_info[j][i] for j in range(len(data))]
-                VAE_sampler.get_his(itemized_info,data_name)
+                VAE_sampler.get_his(itemized_info, data_name, bins=_bins)
                 plt.xlabel(plot_label[i])
                 plt.legend()
                 plt.yscale("log")
