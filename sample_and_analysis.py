@@ -40,6 +40,7 @@ from scipy.stats import gaussian_kde
 import json
 
 from pyjet import cluster, DTYPE_PTEPM
+import tqdm
 
 
 class VAE_sampler:
@@ -52,7 +53,8 @@ class VAE_sampler:
         print("output data shape:{}".format(self.y.shape))
 
     def run_analysis(self, weight_file, number_of_sampling=1, stop_index=None,
-                     out_plot_prefix=None, save_sample_only=True, out_data_prefix=None,out_data_name=None):
+                     out_plot_prefix=None, save_sample_only=True, out_data_prefix=None,out_data_name=None,
+                    additional_plot_config = None):
         # sample the jets using model checkpoint
         if stop_index:
             original_input, original_output = self.x[:stop_index], self.y[:stop_index]
@@ -77,7 +79,7 @@ class VAE_sampler:
         for count, func in enumerate(plotting_function):
             print("getting plot {} out of {}".format(count+1,len(plotting_function)))
             func(*call_parameters)
-        return original_input, original_output, outjets
+        return original_input, original_output, outjets, self.HT
 
     def _load_and_build_model(self, model_prefix, beta=0.001, lr=1e-4):
         vae_args_file = osp.join(model_prefix, "vae_args.dat")
@@ -167,8 +169,8 @@ class VAE_sampler:
             # for index, payload in enumerate(data):
             #     plt.hist(payload[:, :, 1].flatten(), label=data_name[index], alpha=0.5, histtype="step",density=True)
         else:
-            n, b, _ = plt.hist(ojs[:, :, 1].flatten(), label="Original", alpha=0.5)
-            plt.hist(sjs[0][:, :, 1].flatten(), label="Sampled", bins=b, histtype="step", color="black")
+            n, b, _ = plt.hist(ojs[:, :, 1].flatten(), label="Original", alpha=0.5,density=True)
+            plt.hist(sjs[0][:, :, 1].flatten(), label="Sampled", bins=b, histtype="step", color="black",density=True)
         plt.xlabel("Constituent $\eta$")
         plt.legend()
         if save_plot:
@@ -186,8 +188,8 @@ class VAE_sampler:
             #     plt.hist(payload.flatten(), label=data_name[index], alpha=0.5,histtype="step",density=True)
         else:
             phi = np.mod(ojs[:, :, 2], 2*np.pi) - np.pi
-            n, b, _ = plt.hist(phi.flatten(), label="Original", alpha=0.5)
-            plt.hist(sjs[0][:, :, 2].flatten(), label="Sampled", bins=b, histtype="step", color="black")
+            n, b, _ = plt.hist(phi.flatten(), label="Original", alpha=0.5,density=True)
+            plt.hist(sjs[0][:, :, 2].flatten(), label="Sampled", bins=b, histtype="step", color="black",density=True)
         plt.xlabel("Constituent $\phi$")
         plt.legend()
         if save_plot:
@@ -203,8 +205,8 @@ class VAE_sampler:
             # for index, payload in enumerate(data):
             #     plt.hist(payload[:, :, 0].flatten(), label=data_name[index], alpha=0.5, histtype="step",density=True)
         else:
-            n, b, _ = plt.hist(ojs[:, :, 0].flatten(), label="Original", alpha=0.5)
-            plt.hist(sjs[0][:, :, 0].flatten(), label="Sampled", bins=b, histtype="step", color="black")
+            n, b, _ = plt.hist(ojs[:, :, 0].flatten(), label="Original", alpha=0.5,density=True)
+            plt.hist(sjs[0][:, :, 0].flatten(), label="Sampled", bins=b, histtype="step", color="black",density=True)
         plt.xlabel("Constituent $p_T$ fraction")
         plt.yscale("log")
         plt.legend()
@@ -232,8 +234,8 @@ class VAE_sampler:
         else:
             event_mass_oj = VAE_sampler.event_mass(ojs)
             event_mass_sj = VAE_sampler.event_mass(sjs[0])
-            n, b, _ = plt.hist(event_mass_oj, label="Original", alpha=0.5)
-            plt.hist(event_mass_sj, label="Sampled", bins=b, histtype="step", color="black")
+            n, b, _ = plt.hist(event_mass_oj, label="Original", alpha=0.5,density=True)
+            plt.hist(event_mass_sj, label="Sampled", bins=b, histtype="step", color="black",density=True)
         plt.xlabel("Event Mass")
         plt.legend()
         if save_plot:
@@ -258,8 +260,8 @@ class VAE_sampler:
         else:
             MET_oj = VAE_sampler.MET(ojs)
             MET_sj = VAE_sampler.MET(sjs[0])
-            n, b, _ = plt.hist(MET_oj, label="Original", alpha=0.5)
-            plt.hist(MET_sj, label="Sampled", bins=b, histtype="step", color="black")
+            n, b, _ = plt.hist(MET_oj, label="Original", alpha=0.5,density=True)
+            plt.hist(MET_sj, label="Sampled", bins=b, histtype="step", color="black",density=True)
         plt.xlabel("Missing Momentum")
         plt.legend()
         plt.yscale("log")
@@ -269,10 +271,11 @@ class VAE_sampler:
 
     @staticmethod
     def jet_clustering(ojs, ptmin):
+        print("clustering jets with paramert ptmin={}".format(ptmin))
         njets = []
         pTleadjet = []
         mleadjet = []
-        for k in range(len(ojs)):
+        for k in tqdm.tqdm(range(len(ojs))):
             pseudojets_input = np.zeros(50, dtype=DTYPE_PTEPM)
             for i in range(50):
                 pseudojets_input[i]['pT'] = ojs[k, i, 0]
@@ -286,6 +289,39 @@ class VAE_sampler:
                 mleadjet += [jets[0].mass]
         return njets, pTleadjet, mleadjet
 
-    # @staticmethod
-    # def __plots_clusterd_jets(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
-    #
+    @staticmethod
+    def __plots_clusterd_jets(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
+        plot_label = ["n jets", "pT lead jet", "m lead jet"]
+        _ptmin = 0.1
+        if "ptmin" in kwargs:
+            _ptmin = kwargs["ptmin"]
+            print("Alert: using customized argument: ptmin = {}".format(_ptmin))
+
+        if additional_signal:
+            data = [ojs, sjs]
+            data.extend(additional_signal)
+            clustering_info = []
+            for d in data:
+                clustering_info.append(VAE_sampler.jet_clustering(d,_ptmin))
+            for i in range(3):
+                itemized_info = [clustering_info[j][i] for j in range(len(data))]
+                VAE_sampler.get_his(itemized_info,data_name)
+                plt.xlabel(plot_label[i])
+                plt.legend()
+                plt.yscale("log")
+                if save_plot:
+                    plt.savefig(osp.join(save_plot, plot_label[i]+".png"))
+                plt.show()
+
+        else:
+            ojs_cluster = VAE_sampler.jet_clustering(ojs,_ptmin)
+            sjs_cluster = VAE_sampler.jet_clustering(sjs[0],_ptmin)
+            for i in range(3):
+                n, b, _ = plt.hist(ojs_cluster[i], label="Original", alpha=0.5,density=True)
+                plt.hist(sjs_cluster[i], label="Sampled", bins=b, histtype="step", color="black",density=True)
+                plt.xlabel(plot_label[i])
+                plt.legend()
+                plt.yscale("log")
+                if save_plot:
+                    plt.savefig(osp.join(save_plot, plot_label[i]+".png"))
+                plt.show()
