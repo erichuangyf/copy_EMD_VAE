@@ -151,7 +151,7 @@ class VAE_sampler:
             data = [ojs, sjs]
             data.extend(additional_signal)
             for index, payload in enumerate(data):
-                plt.hist(payload[:, :, 1].flatten(), label=data_name[index], alpha=0.5, histtype="step")
+                plt.hist(payload[:, :, 1].flatten(), label=data_name[index], alpha=0.5, histtype="step",density=True)
         else:
             n, b, _ = plt.hist(ojs[:, :, 1].flatten(), label="Original", alpha=0.5)
             plt.hist(sjs[0][:, :, 1].flatten(), label="Sampled", bins=b, histtype="step", color="black")
@@ -168,7 +168,7 @@ class VAE_sampler:
             data.extend(additional_signal)
             for index, payload in enumerate(data):
                 payload = np.mod(payload[:, :, 2], 2*np.pi) - np.pi
-                plt.hist(payload.flatten(), label=data_name[index], alpha=0.5,histtype="step")
+                plt.hist(payload.flatten(), label=data_name[index], alpha=0.5,histtype="step",density=True)
         else:
             phi = np.mod(ojs[:, :, 2], 2*np.pi) - np.pi
             n, b, _ = plt.hist(phi.flatten(), label="Original", alpha=0.5)
@@ -185,7 +185,7 @@ class VAE_sampler:
             data = [ojs, sjs]
             data.extend(additional_signal)
             for index, payload in enumerate(data):
-                plt.hist(payload[:, :, 0].flatten(), label=data_name[index], alpha=0.5, histtype="step")
+                plt.hist(payload[:, :, 0].flatten(), label=data_name[index], alpha=0.5, histtype="step",density=True)
         else:
             n, b, _ = plt.hist(ojs[:, :, 0].flatten(), label="Original", alpha=0.5)
             plt.hist(sjs[0][:, :, 0].flatten(), label="Sampled", bins=b, histtype="step", color="black")
@@ -214,7 +214,7 @@ class VAE_sampler:
             data.extend(additional_signal)
             for index, payload in enumerate(data):
                 mass = VAE_sampler.event_mass(payload)
-                plt.hist(mass, label=data_name[index], alpha=0.5, histtype="step")
+                plt.hist(mass, label=data_name[index], alpha=0.5, histtype="step",density=True)
         else:
             event_mass_oj = VAE_sampler.event_mass(ojs)
             event_mass_sj = VAE_sampler.event_mass(sjs[0])
@@ -242,7 +242,7 @@ class VAE_sampler:
             data.extend(additional_signal)
             for index, payload in enumerate(data):
                 MET = VAE_sampler.event_mass(payload)
-                plt.hist(MET, label=data_name[index], alpha=0.5,histtype="step")
+                plt.hist(MET, label=data_name[index], alpha=0.5,histtype="step",density=True)
         else:
             MET_oj = VAE_sampler.MET(ojs)
             MET_sj = VAE_sampler.MET(sjs[0])
@@ -255,24 +255,24 @@ class VAE_sampler:
             plt.savefig(osp.join(save_plot, "MET.png"))
         plt.show()
 
-    # @staticmethod
-    # def __plots_jets(ojs, sjs, save_plot):
-    #     from pyjet import cluster, DTYPE_PTEPM
-    #     njets = []
-    #     pTleadjet = []
-    #     mleadjet = []
-    #     for k in range(len(ojs)):
-    #         pseudojets_input = np.zeros(50, dtype=DTYPE_PTEPM)
-    #         for i in range(50):
-    #             pseudojets_input[i]['pT'] = ojs[k, i, 0]
-    #             pseudojets_input[i]['eta'] = ojs[k, i, 1]
-    #             pseudojets_input[i]['phi'] = ojs[k, i, 2]
-    #         sequence = cluster(pseudojets_input, R=0.4, p=-1)
-    #         jets = sequence.inclusive_jets(ptmin=0.1)
-    #         njets += [len(jets)]
-    #         if (len(jets) > 0):
-    #             pTleadjet += [jets[0].pt]
-    #             mleadjet += [jets[0].mass]
-    #     if save_plot:
-    #         plt.savefig(osp.join(save_plot, "jets.png"))
-    #     plt.show()
+    @staticmethod
+    def __plots_jets(ojs, sjs, save_plot):
+        from pyjet import cluster, DTYPE_PTEPM
+        njets = []
+        pTleadjet = []
+        mleadjet = []
+        for k in range(len(ojs)):
+            pseudojets_input = np.zeros(50, dtype=DTYPE_PTEPM)
+            for i in range(50):
+                pseudojets_input[i]['pT'] = ojs[k, i, 0]
+                pseudojets_input[i]['eta'] = ojs[k, i, 1]
+                pseudojets_input[i]['phi'] = ojs[k, i, 2]
+            sequence = cluster(pseudojets_input, R=0.4, p=-1)
+            jets = sequence.inclusive_jets(ptmin=0.1) # 5 gev 
+            njets += [len(jets)]
+            if (len(jets) > 0):
+                pTleadjet += [jets[0].pt]
+                mleadjet += [jets[0].mass]
+        if save_plot:
+            plt.savefig(osp.join(save_plot, "jets.png"))
+        plt.show()
