@@ -39,11 +39,13 @@ from scipy.stats import gaussian_kde
 
 import json
 
+from pyjet import cluster, DTYPE_PTEPM
+
 
 class VAE_sampler:
 
     def __init__(self, data_file_name, model_prefix, train_valid_split=800000, beta=0.001, lr=1e-4):
-        self.x, self.y, self.vae, self.encoder, self.decoder = None, None, None, None, None
+        self.x, self.y, self.vae, self.encoder, self.decoder, self.HT = None, None, None, None, None, None
         self._process_data(data_file_name, train_valid_split)
         self._load_and_build_model(model_prefix, beta, lr)
         print("input data shape:{}".format(self.x.shape))
@@ -72,7 +74,7 @@ class VAE_sampler:
             [method for method in dir(VAE_sampler) if method.startswith('_VAE_sampler__plots')]
         plotting_function = [eval("VAE_sampler."+func_name) for func_name in plotting_method_name]
         call_parameters = [original_output, outjets, out_plot_prefix]
-        for count,func in enumerate(plotting_function):
+        for count, func in enumerate(plotting_function):
             print("getting plot {} out of {}".format(count+1,len(plotting_function)))
             func(*call_parameters)
         return original_input, original_output, outjets
@@ -98,6 +100,7 @@ class VAE_sampler:
 
         # Normalize pTs so that HT = 1
         HT = np.sum(data[:, :, 0], axis=-1)
+        self.HT = HT
         data[:, :, 0] = data[:, :, 0] / HT[:, None]
 
         # Inputs x to NN will be: pT, eta, cos(phi), sin(phi), log E
@@ -144,14 +147,25 @@ class VAE_sampler:
         hfile.create_dataset('sampled_jets', data=sampled_jets)
         hfile.close()
 
+    @staticmethod
+    def get_his(data, data_name, process_func=None):
+        for index, payload in enumerate(data):
+            if process_func:
+                payload = process_func(payload)
+            if index == 0:
+                n, b, _ = plt.hist(payload, label=data_name[index], alpha=0.5, histtype="step", density=True)
+            else:
+                plt.hist(payload, label=data_name[index], bins=b, alpha=0.5, histtype="step", density=True)
+
     # the plotting function starts here
     @staticmethod
-    def __plots_constituent_eta(ojs, sjs, save_plot, additional_signal=None, data_name=None):
+    def __plots_constituent_eta(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
         if additional_signal:
             data = [ojs, sjs]
             data.extend(additional_signal)
-            for index, payload in enumerate(data):
-                plt.hist(payload[:, :, 1].flatten(), label=data_name[index], alpha=0.5, histtype="step",density=True)
+            VAE_sampler.get_his(data, data_name, lambda x: (x[:, :, 1]).flatten())
+            # for index, payload in enumerate(data):
+            #     plt.hist(payload[:, :, 1].flatten(), label=data_name[index], alpha=0.5, histtype="step",density=True)
         else:
             n, b, _ = plt.hist(ojs[:, :, 1].flatten(), label="Original", alpha=0.5)
             plt.hist(sjs[0][:, :, 1].flatten(), label="Sampled", bins=b, histtype="step", color="black")
@@ -162,13 +176,14 @@ class VAE_sampler:
         plt.show()
 
     @staticmethod
-    def __plots_constituent_phi(ojs, sjs, save_plot, additional_signal=None, data_name=None):
+    def __plots_constituent_phi(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
         if additional_signal:
             data = [ojs, sjs]
             data.extend(additional_signal)
-            for index, payload in enumerate(data):
-                payload = np.mod(payload[:, :, 2], 2*np.pi) - np.pi
-                plt.hist(payload.flatten(), label=data_name[index], alpha=0.5,histtype="step",density=True)
+            VAE_sampler.get_his(data, data_name, lambda x: (np.mod(x[:, :, 2], 2*np.pi) - np.pi).flatten())
+            # for index, payload in enumerate(data):
+            #     payload = np.mod(payload[:, :, 2], 2*np.pi) - np.pi
+            #     plt.hist(payload.flatten(), label=data_name[index], alpha=0.5,histtype="step",density=True)
         else:
             phi = np.mod(ojs[:, :, 2], 2*np.pi) - np.pi
             n, b, _ = plt.hist(phi.flatten(), label="Original", alpha=0.5)
@@ -180,12 +195,13 @@ class VAE_sampler:
         plt.show()
 
     @staticmethod
-    def __plots_constituent_pt(ojs, sjs, save_plot, additional_signal=None, data_name=None):
+    def __plots_constituent_pt(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
         if additional_signal:
             data = [ojs, sjs]
             data.extend(additional_signal)
-            for index, payload in enumerate(data):
-                plt.hist(payload[:, :, 0].flatten(), label=data_name[index], alpha=0.5, histtype="step",density=True)
+            VAE_sampler.get_his(data, data_name, lambda x: (x[:, :, 0]).flatten())
+            # for index, payload in enumerate(data):
+            #     plt.hist(payload[:, :, 0].flatten(), label=data_name[index], alpha=0.5, histtype="step",density=True)
         else:
             n, b, _ = plt.hist(ojs[:, :, 0].flatten(), label="Original", alpha=0.5)
             plt.hist(sjs[0][:, :, 0].flatten(), label="Sampled", bins=b, histtype="step", color="black")
@@ -208,13 +224,11 @@ class VAE_sampler:
         return np.array(ms)
 
     @staticmethod
-    def __plots_event_mass(ojs, sjs, save_plot, additional_signal=None, data_name=None):
+    def __plots_event_mass(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
         if additional_signal:
             data = [ojs, sjs]
             data.extend(additional_signal)
-            for index, payload in enumerate(data):
-                mass = VAE_sampler.event_mass(payload)
-                plt.hist(mass, label=data_name[index], alpha=0.5, histtype="step",density=True)
+            VAE_sampler.get_his(data, data_name, VAE_sampler.event_mass)
         else:
             event_mass_oj = VAE_sampler.event_mass(ojs)
             event_mass_sj = VAE_sampler.event_mass(sjs[0])
@@ -236,13 +250,11 @@ class VAE_sampler:
         return np.array(ms)
 
     @staticmethod
-    def __plots_MET(ojs, sjs, save_plot, additional_signal=None, data_name=None):
+    def __plots_MET(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
         if additional_signal:
             data = [ojs, sjs]
             data.extend(additional_signal)
-            for index, payload in enumerate(data):
-                MET = VAE_sampler.event_mass(payload)
-                plt.hist(MET, label=data_name[index], alpha=0.5,histtype="step",density=True)
+            VAE_sampler.get_his(data, data_name, VAE_sampler.MET)
         else:
             MET_oj = VAE_sampler.MET(ojs)
             MET_sj = VAE_sampler.MET(sjs[0])
@@ -256,8 +268,7 @@ class VAE_sampler:
         plt.show()
 
     @staticmethod
-    def __plots_jets(ojs, sjs, save_plot):
-        from pyjet import cluster, DTYPE_PTEPM
+    def jet_clustering(ojs, ptmin):
         njets = []
         pTleadjet = []
         mleadjet = []
@@ -268,11 +279,13 @@ class VAE_sampler:
                 pseudojets_input[i]['eta'] = ojs[k, i, 1]
                 pseudojets_input[i]['phi'] = ojs[k, i, 2]
             sequence = cluster(pseudojets_input, R=0.4, p=-1)
-            jets = sequence.inclusive_jets(ptmin=0.1) # 5 gev 
+            jets = sequence.inclusive_jets(ptmin=ptmin)  # 5 gev
             njets += [len(jets)]
             if (len(jets) > 0):
                 pTleadjet += [jets[0].pt]
                 mleadjet += [jets[0].mass]
-        if save_plot:
-            plt.savefig(osp.join(save_plot, "jets.png"))
-        plt.show()
+        return njets, pTleadjet, mleadjet
+
+    # @staticmethod
+    # def __plots_clusterd_jets(ojs, sjs, save_plot, additional_signal=None, data_name=None, **kwargs):
+    #
