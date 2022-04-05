@@ -6,7 +6,7 @@
 # In[1]:
 
 output_dir = '/global/home/users/yifengh3/VAE/B_results'
-experiment_name = 'method2_beta2'
+experiment_name = 'exp2'
 
 
 import tensorflow as tf

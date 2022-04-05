@@ -27,8 +27,8 @@ import tensorflow.keras as keras
 import tensorflow.keras.backend as K
 
 # from utils.tf_sinkhorn import ground_distance_tf_nograd, sinkhorn_knopp_tf_scaling_stabilized_class
-import utils.VAE_model_tools_leakyrelu
-from utils.VAE_model_tools_leakyrelu import build_and_compile_annealing_vae, betaVAEModel, reset_metrics
+#import utils.VAE_model_tools_leakyrelu
+#from utils.VAE_model_tools_leakyrelu import build_and_compile_annealing_vae, betaVAEModel, reset_metrics
 
 import pandas
 import matplotlib.pyplot as plt
@@ -48,7 +48,7 @@ class VAE_sampler:
     def __init__(self, data_file_name, model_prefix, train_valid_split=800000, beta=0.001, lr=1e-4):
         self.x, self.y, self.vae, self.encoder, self.decoder, self.HT = None, None, None, None, None, None
         self._process_data(data_file_name, train_valid_split)
-        self._load_and_build_model(model_prefix, beta, lr)
+        #self._load_and_build_model(model_prefix, beta, lr)
         print("input data shape:{}".format(self.x.shape))
         print("output data shape:{}".format(self.y.shape))
 
@@ -98,7 +98,7 @@ class VAE_sampler:
         print("Memory in GB:", sum(df.memory_usage(deep=True)) / (1024 ** 3) + sum(df.memory_usage(deep=True)) / (1024 ** 3))
 
         # Data file contains, for each event, 50 particles (with zero padding), each particle with pT, eta, phi
-        data = df.values.reshape((-1, 50, 3))
+        data = df.values.reshape((-1, 50, 4))
 
         # Normalize pTs so that HT = 1
         HT = np.sum(data[:, :, 0], axis=-1)
@@ -322,6 +322,7 @@ class VAE_sampler:
             for d in data:
                 clustering_info.append(VAE_sampler.jet_clustering(d,_ptmin))
             for i in range(3):
+                plt.figure()
                 itemized_info = [clustering_info[j][i] for j in range(len(data))]
                 VAE_sampler.get_his(itemized_info, data_name, bins=_bins)
                 plt.xlabel(plot_label[i])
@@ -335,6 +336,7 @@ class VAE_sampler:
             ojs_cluster = VAE_sampler.jet_clustering(ojs,_ptmin)
             sjs_cluster = VAE_sampler.jet_clustering(sjs[0],_ptmin)
             for i in range(3):
+                plt.figure()
                 n, b, _ = plt.hist(ojs_cluster[i], label="Original", alpha=0.5,density=True)
                 plt.hist(sjs_cluster[i], label="Sampled", bins=b, histtype="step", color="black",density=True)
                 plt.xlabel(plot_label[i])
